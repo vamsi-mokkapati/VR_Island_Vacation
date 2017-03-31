@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>Island Vacation</title>
+		<!-- jQuery -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+		<script type="text/javascript" src="/js/Common/MV.js"></script>
+		<script type="text/javascript" src="/js/Common/webgl-utils.js"></script>
+		<script type="text/javascript" src="/js/Common/initShaders.js"></script>
+        <script type="text/javascript" src="/js/islandHeights.js"></script>
+		<script type="text/javascript" src="/js/camera.js"></script>
+		<script type="text/javascript" src="/js/collisionsAndPhysics.js"></script>
+		<script type="text/javascript" src="/js/player.js"></script>
+		<script type="text/javascript" src="/js/texture.js"></script>
+		<script type="text/javascript" src="/js/shapes/shape.js"></script>
+		<script type="text/javascript" src="/js/shapes/cube.js"></script>
+		<script type="text/javascript" src="/js/shapes/multiTexCube.js"></script>
+		<script type="text/javascript" src="/js/shapes/sphere.js"></script>
+		<script type="text/javascript" src="/js/shapes/plane.js"></script>
+		<script type="text/javascript" src="/js/objects/sun.js"></script>
+		<script type="text/javascript" src="/js/shapes/hexagonalPrism.js"></script>
+		<script type="text/javascript" src="/js/shapes/hexagonalPyramid.js"></script>
+		<script type="text/javascript" src="/js/objects/tree.js"></script>
+        <script type="text/javascript" src="/js/objects/memeCube.js"></script>
+		<script type="text/javascript" src="/js/islandTextures.js"></script>
+
+		<script type="text/javascript" src="/js/laptopScene.js"></script>
+		<script type="text/javascript" src="/js/serverIO.js"></script>
+
+		<script id="shader-vertex" type="x-shader/x-vertex">
+			precision mediump float;
+
+			// Position attributes and uniforms
+			attribute vec3 vPosition;
+			attribute vec3 vNormal;
+			attribute vec3 objTangent;
+			attribute vec2 texCoord;
+			uniform mat4 modelMatrix;
+			uniform mat4 projViewMatrix;
+			uniform mat4 normalMat;
+
+			uniform vec3 lightPosition;
+			uniform int enableBumpingV;
+
+			varying vec2 fUV;
+			varying vec3 N, L, posToLight;
+			void main() {
+
+				// Make sure our w components are set properly
+				vec4 pos  = vec4(vPosition, 1.0);
+				vec4 norm = vec4(vNormal, 0.0);
+
+				vec3 posInWorld    = (modelMatrix * pos).xyz;
+				vec3 normalInWorld = (normalMat * norm).xyz;
+				vec3 lightInWorld  = lightPosition; // Light already in world coordinates
+
+				posToLight = normalize(lightInWorld - posInWorld);
+				N = normalize(normalInWorld);
+				L = vec3(0.0, 0.0, 0.0);
+
+
+			if(enableBumpingV == 1){
+				vec4 tan  = vec4(objTangent, 0.0);
+
+				//Calculate the tangent space
+				vec3 T = normalize((normalMat * tan).xyz);
+				vec3 B = cross(N, T);
+
+				//convert the light vector into the tangent space
+				L.x = dot(T, posToLight);
+
+				//This switch is to fix the order of lighting on the top and bottom faces of
+				//the cube
+				if(norm.y == 1.0 || norm.y == -1.0) {
+					L.y = dot(B, posToLight);
+					L.z = dot(N, posToLight);}
+				else {
+					L.y = dot(N, posToLight);
+					L.z = dot(B, posToLight);}
+					
+				L = normalize(L);
+			}
+
+				fUV = texCoord;
+				gl_Position = projViewMatrix * vec4(posInWorld, 1.0);
+			}
+		</script>
+
+		<script id="shader-fragment" type="x-shader/x-fragment">
+			precision mediump float;
+
+			uniform vec4 ambientProduct;
+			uniform vec4 diffuseProduct;
+			uniform sampler2D uSampler;
+			uniform sampler2D nSampler;
+
+			uniform int enableBumpingF;
+			uniform int enableLighting;
+			uniform int uniformLighting;
+
+			varying vec3 N, L, posToLight;
+			varying vec2 fUV;
+			void main() {
+
+				// We ignore specular highlights
+				float Kd = 0.0;
+
+				if(enableBumpingF == 1){
+					vec3 bumpNormal = 2.0*(texture2D(nSampler, fUV)).xyz-vec3(1.0, 1.0, 1.0);
+					bumpNormal = bumpNormal + vec3(0.0, 1.0, 0.0);
+					
+					float max_tex_dot = max(dot(L, bumpNormal), 0.0);
+					float NL_dot = dot(N, posToLight);
+					//if the light source can be seen by the face bump map normally
+					if(NL_dot > -0.1) 
+						Kd = max_tex_dot;
+					//in the transition between when light can be seen by the face and not, use a 
+					//linear smoother so the transition is not abrupt
+					else if (NL_dot > -0.2){
+						float lin_smoother = 1.0 + (NL_dot + 0.1)/0.1;
+						Kd = max_tex_dot * lin_smoother;}
+				}
+				else{
+					Kd = max(dot(N, posToLight), 0.0);
+				}
+				
+			vec4 fColor;
+
+				if(enableLighting == 0)
+					fColor = vec4(1.0, 1.0, 1.0, 1.0);
+				else{
+					vec4 ambient  = ambientProduct;
+					vec4 diffuse  =  Kd * diffuseProduct;
+	
+					fColor = ambient + diffuse;
+					fColor.a = 1.0;
+	
+					if(uniformLighting == 0) {
+						fColor = (0.25 * ambient) + (0.75 * diffuseProduct);
+					}
+				}
+				gl_FragColor = fColor * texture2D(uSampler, fUV);
+			}
+		</script>
+	</head>
+    <canvas id="gl-canvas" style="background: url('/img/sky.jpg')" width="900" height="600" class="centered">
+        Sorry, your browser does not support WebGL.
+    </canvas>
+	<body>
+		<div style="width: 720px; margin: auto;">
+			<center>
+				<h2>Island Vacation</h2>
+				<h3>Vamsi Mokkapati, Anbo Wei, Sabrina Chiang</h3>
+			</center>
+            <!--width="720" height="480" class="centered"-->
+			<!-- <canvas id="gl-canvas" style="background: url('../img/rainbowSky2.png')" width="720" height="480" class="centered">
+				Sorry, your browser does not support WebGL.
+			</canvas> -->
+			<ul class="columns"> 
+                <li>Use <strong>W</strong>, <strong>A</strong>, <strong>S</strong>, and <strong>D</strong> to move around the island!</li> 
+                <li>Use the mouse to look around!</li> 
+		</div>
+	</body>
+</html>

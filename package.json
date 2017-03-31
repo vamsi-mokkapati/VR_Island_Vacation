@@ -1,0 +1,25 @@
+{
+  "name": "wei.cs174final",
+  "version": "1.0.0",
+  "description": "Something new",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MicrosizeMe/CS174Final"
+  },
+  "author": "Anbo Wei",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MicrosizeMe/CS174Final/issues"
+  },
+  "homepage": "https://github.com/MicrosizeMe/CS174Final#readme",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "express-session": "^1.14.1",
+    "tcp-port-used": "^0.1.2"
+  }
+}
