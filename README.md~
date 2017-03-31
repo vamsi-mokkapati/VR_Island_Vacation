@@ -7,7 +7,7 @@ The following links go to a web server, where the code is being hosted.
 
 ### Laptop Version
 
-Click [here](http://192.241.227.179:9000/html/laptop.html) on your laptop/desktop to run the simulator.
+Click [here](192.241.227.179:9000/html/laptop.html) on your laptop/desktop to run the simulator.
 
 The goal of this experience is to enjoy the island. Here are things you can do:
 - walk around the island using the W, A, S, and D keys
@@ -17,7 +17,7 @@ The goal of this experience is to enjoy the island. Here are things you can do:
 
 ### Phone Version
 
-Click [here](http://192.241.227.179:9000/html/phone.html) on your phone to run the simulator.
+Click [here](192.241.227.179:9000/html/phone.html) on your phone to run the simulator.
 
 To enable the user to look around the island, we used the gyroscope 
 functionality found in most mobile devices. Simply move your phone around,
