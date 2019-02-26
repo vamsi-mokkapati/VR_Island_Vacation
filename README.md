@@ -1,4 +1,4 @@
-# Virtual Reality Island Vacation
+# IslandEscape
 ### By Vamsi Mokkapati, Anbo Wei, and Sabrina Chiang
 
 ## Experience it Yourself!
